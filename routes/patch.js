@@ -237,5 +237,12 @@ export function getPatchChecksum(req, res) {
     .map(([rel, hex]) => `${rel}=${String(hex).toLowerCase().padStart(16, "0")}`)
     .join("\n");
 
-  res.type("text/plain").send(lines);
+  res
+    .status(200)
+    .type("text/plain")
+    .set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+    .set("Pragma", "no-cache")
+    .set("Expires", "0")
+    .send(lines);
 }
+

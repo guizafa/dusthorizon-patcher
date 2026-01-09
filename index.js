@@ -10,6 +10,9 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+// ✅ evita 304 por ETag no Express
+app.set("etag", false);
+
 // middlewares
 app.use(cors({ origin: "*" }));
 app.use(morgan("dev"));
