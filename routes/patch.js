@@ -232,8 +232,31 @@ export async function initChecksums(rootDir, { forceRebuild = false } = {}) {
   return finalPairs;
 }
 
+// GET /patch         -> text/plain path=hash (legacy: old launchers keep working)
+// GET /patch?format=json -> JSON with path, hash, size, mtimeMs (new launcher quick check)
 export function getPatchChecksum(req, res) {
-  const lines = (global.checksums || [])
+  const checksums = global.checksums || [];
+  const format = (req.query && req.query.format) ? String(req.query.format) : "";
+  const wantsJson = format.toLowerCase() === "json";
+
+  if (wantsJson) {
+    const files = checksums.map(([rel, hex, size, mtimeMs]) => ({
+      path: rel,
+      hash: String(hex).toLowerCase().padStart(16, "0"),
+      size: typeof size === "number" ? size : 0,
+      mtimeMs: typeof mtimeMs === "number" ? mtimeMs : 0,
+    }));
+    res
+      .status(200)
+      .type("application/json")
+      .set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+      .set("Pragma", "no-cache")
+      .set("Expires", "0")
+      .json({ files });
+    return;
+  }
+
+  const lines = checksums
     .map(([rel, hex]) => `${rel}=${String(hex).toLowerCase().padStart(16, "0")}`)
     .join("\n");
 
